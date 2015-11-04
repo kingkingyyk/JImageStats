@@ -248,13 +248,12 @@ public class MainUI extends JFrame {
 		panelFiles_tableFiles.setShowHorizontalLines(false);
 		panelFiles_tableFiles.setShowGrid(false);
 		panelFiles_tableFiles.setModel(new DefaultTableModel(
-			new Object[][] {
-				{null, null, null, null, null, null, null, null},
-			},
+			null,
 			new String[] {
 				"Filename", "Camera", "Lens", "ISO", "Aperture", "Shutter Speed", "Focal Length", "Path"
 			}
 		));
+		panelFiles_tableFiles.getTableHeader().setReorderingAllowed(false);
 		panelFiles_tableFiles.getColumnModel().getColumn(0).setPreferredWidth(67);
 		panelFiles_tableFiles.getColumnModel().getColumn(1).setPreferredWidth(78);
 		panelFiles_tableFiles.getColumnModel().getColumn(3).setPreferredWidth(45);
@@ -747,15 +746,15 @@ public class MainUI extends JFrame {
 	
 	private void updateFileTable() {
 		ImageInfo [] infoAry=JImageStats.database.queryImageInfo(allComboBoxBody[1].getSelectedItem().toString(), allComboBoxLens[1].getSelectedItem().toString());
-		String [][] parsedInfo=new String [infoAry.length][8];
+		Object [][] parsedInfo=new Object [infoAry.length][8];
 		for (int i=0;i<infoAry.length;i++) {
 			parsedInfo[i][0]=infoAry[i].filename;
 			parsedInfo[i][1]=infoAry[i].body;
 			parsedInfo[i][2]=infoAry[i].lens;
-			parsedInfo[i][3]=infoAry[i].ISO+"";
-			parsedInfo[i][4]=infoAry[i].aperture+"";
+			parsedInfo[i][3]=infoAry[i].ISO;
+			parsedInfo[i][4]=infoAry[i].aperture;
 			parsedInfo[i][5]=infoAry[i].shutterSpeed;
-			parsedInfo[i][6]=infoAry[i].focalLength+"";
+			parsedInfo[i][6]=infoAry[i].focalLength;
 			parsedInfo[i][7]=infoAry[i].filepath;
 			
 		}
@@ -770,6 +769,14 @@ public class MainUI extends JFrame {
 			public boolean isCellEditable(int row, int column) {
 				return false;
 			}
+
+			@SuppressWarnings("rawtypes")
+			Class [] classes = {String.class,String.class,String.class,Integer.class,Double.class,String.class,Double.class,String.class};
+			@Override
+		    @SuppressWarnings({ "unchecked", "rawtypes" })
+		    public Class getColumnClass(int columnIndex) {
+		        return classes[columnIndex];
+		    }
 		});
 	}
 	

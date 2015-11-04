@@ -1,6 +1,5 @@
 package JImageStats;
 
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.GroupLayout;
 import javax.swing.ImageIcon;
