@@ -16,6 +16,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTree;
 import javax.swing.UIManager;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Dimension;
 
@@ -26,6 +27,7 @@ import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.BufferedReader;
@@ -57,6 +59,7 @@ import java.awt.BorderLayout;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.BoxLayout;
 import javax.swing.ComboBoxModel;
@@ -64,6 +67,7 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import java.awt.SystemColor;
+import javax.swing.JCheckBox;
 
 public class MainUI extends JFrame {
 	private static final long serialVersionUID = -3927883820726832777L;
@@ -116,6 +120,7 @@ public class MainUI extends JFrame {
 	private JLabel pabelAbout_panelTitle_lblTitle;
 	private JTextArea panelAbout_scrollPane_lblAbout;
 	private JScrollPane panelAbout_scrollPane;
+	private JCheckBox panelFiles_chckbxQuickPreview;
 
 	@SuppressWarnings("unchecked")
 	public MainUI() {
@@ -203,6 +208,7 @@ public class MainUI extends JFrame {
 		panelFiles.setLayout(new BorderLayout(0, 0));
 		
 		panelFiles_panel = new JPanel();
+		panelFiles_panel.setBackground(Color.WHITE);
 		panelFiles.add(panelFiles_panel, BorderLayout.NORTH);
 		panelFiles_panel.setLayout(new BoxLayout(panelFiles_panel, BoxLayout.X_AXIS));
 		
@@ -217,54 +223,94 @@ public class MainUI extends JFrame {
 		scrollPane_1 = new JScrollPane();
 		panelFiles.add(scrollPane_1, BorderLayout.CENTER);
 		
-		panelFiles_tableFiles = new JTable();
+		panelFiles_tableFiles = new JTable() {
+			private static final long serialVersionUID = -9143046099485198944L;
+
+			@Override
+		    public Component prepareRenderer(TableCellRenderer renderer, int row, int col) {
+		        Component c = super.prepareRenderer(renderer, row, col);
+		        int [] selectedRows=this.getSelectedRows();
+		        boolean selected=false;
+		        for (int i=0;i<selectedRows.length && !selected;i++) {
+		        	selected=(selectedRows[i]==row);
+		        }
+		        if (selected) {
+		            c.setBackground(new Color(51,153,255,255));
+		        } else if (row%2==0) {
+		            c.setBackground(Color.WHITE);
+		        } else {
+		            c.setBackground(new Color(229,243,255,255));
+		        }
+		        return c;
+		    }
+		};
 		panelFiles_tableFiles.setShowVerticalLines(false);
 		panelFiles_tableFiles.setShowHorizontalLines(false);
 		panelFiles_tableFiles.setShowGrid(false);
 		panelFiles_tableFiles.setModel(new DefaultTableModel(
 			new Object[][] {
+				{null, null, null, null, null, null, null, null},
 			},
 			new String[] {
-				"Filename", "Camera", "Lens", "ISO", "Aperture", "Shutter Speed", "Focal Length",  "Path"
+				"Filename", "Camera", "Lens", "ISO", "Aperture", "Shutter Speed", "Focal Length", "Path"
 			}
-		) {
-			private static final long serialVersionUID = -6968857184008220776L;
-			
-			public boolean isCellEditable(int row, int column) {
-				return false;
-			}
-		});
+		));
+		panelFiles_tableFiles.getColumnModel().getColumn(0).setPreferredWidth(67);
+		panelFiles_tableFiles.getColumnModel().getColumn(1).setPreferredWidth(78);
+		panelFiles_tableFiles.getColumnModel().getColumn(3).setPreferredWidth(45);
+		panelFiles_tableFiles.getColumnModel().getColumn(4).setPreferredWidth(51);
+		panelFiles_tableFiles.getColumnModel().getColumn(5).setPreferredWidth(64);
+		panelFiles_tableFiles.getColumnModel().getColumn(6).setPreferredWidth(82);
 		panelFiles_tableFiles.addMouseListener(new MouseListener() {
+			private FileTableMenu ContextMenu=new FileTableMenu(panelFiles_tableFiles);
+			
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
-				int row=panelFiles_tableFiles.getSelectedRow();
-				int col=panelFiles_tableFiles.getSelectedColumn();
-				if (arg0.getClickCount()==1) {
-					if (row!=-1 && col!=-1) {
-						panelFiles_tableFiles.setEnabled(false);
-						Point l=MouseInfo.getPointerInfo().getLocation();
+				if (arg0.getButton()==MouseEvent.BUTTON1) {
+					ContextMenu.setVisible(false);
+					int row=panelFiles_tableFiles.getSelectedRow();
+					int col=panelFiles_tableFiles.getSelectedColumn();
+					if (arg0.getClickCount()==1) {
+						if (panelFiles_chckbxQuickPreview.isSelected() && row!=-1 && col!=-1) {
+							panelFiles_tableFiles.setEnabled(false);
+							Point l=MouseInfo.getPointerInfo().getLocation();
+							int column=-1;
+							for (int i=0;i<panelFiles_tableFiles.getColumnCount() && column==-1;i++) {
+								if (panelFiles_tableFiles.getColumnName(i).equals("Path")) {
+									column=i;
+								}
+							}
+							String localPath=panelFiles_tableFiles.getValueAt(row, column).toString();
+							imgTooltip.setLocation((int)l.getX()+15,(int)l.getY()+15);
+							imgTooltip.setImg(new ImageIcon(localPath));
+							imgTooltip.setVisible(true);
+							panelFiles_tableFiles.setEnabled(true);
+						}
+					} else if (arg0.getClickCount()==2) {
 						int column=-1;
 						for (int i=0;i<panelFiles_tableFiles.getColumnCount() && column==-1;i++) {
 							if (panelFiles_tableFiles.getColumnName(i).equals("Path")) {
 								column=i;
 							}
 						}
-						String localPath=panelFiles_tableFiles.getValueAt(row, column).toString();
-						imgTooltip.setLocation((int)l.getX()+15,(int)l.getY()+15);
-						imgTooltip.setImg(new ImageIcon(localPath));
-						imgTooltip.setVisible(true);
-						panelFiles_tableFiles.setEnabled(true);
+						try {
+							Desktop.getDesktop().open(new File(panelFiles_tableFiles.getValueAt(row, column).toString()));
+						} catch (IOException e) {}
 					}
-				} else if (arg0.getClickCount()==2) {
-					int column=-1;
-					for (int i=0;i<panelFiles_tableFiles.getColumnCount() && column==-1;i++) {
-						if (panelFiles_tableFiles.getColumnName(i).equals("Path")) {
-							column=i;
+				} else if ((arg0.getModifiers()==InputEvent.BUTTON3_MASK)) {
+					int row=panelFiles_tableFiles.rowAtPoint(arg0.getPoint());
+					if (row!=-1) {
+						panelFiles_tableFiles.clearSelection();
+						panelFiles_tableFiles.addRowSelectionInterval(row, row);
+						int column=-1;
+						for (int i=0;i<panelFiles_tableFiles.getColumnCount() && column==-1;i++) {
+							if (panelFiles_tableFiles.getColumnName(i).equals("Path")) {
+								column=i;
+							}
 						}
+						ContextMenu.setFilePath(panelFiles_tableFiles.getValueAt(row, column).toString());
+						ContextMenu.show(panelFiles_tableFiles,arg0.getX(),arg0.getY());
 					}
-					try {
-						Desktop.getDesktop().open(new File(panelFiles_tableFiles.getValueAt(row, column).toString()));
-					} catch (IOException e) {}
 				}
 			}
 			@Override
@@ -272,8 +318,10 @@ public class MainUI extends JFrame {
 
 			@Override
 			public void mouseExited(MouseEvent arg0) {
-				imgTooltip.setVisible(false);
-				System.gc ();
+				if (imgTooltip.isVisible()) {
+					imgTooltip.setVisible(false);
+					System.gc ();
+				}
 			}
 
 			@Override
@@ -282,11 +330,6 @@ public class MainUI extends JFrame {
 			@Override
 			public void mouseReleased(MouseEvent arg0) {}
 		});
-		panelFiles_tableFiles.getColumnModel().getColumn(0).setPreferredWidth(67);
-		panelFiles_tableFiles.getColumnModel().getColumn(1).setPreferredWidth(68);
-		panelFiles_tableFiles.getColumnModel().getColumn(4).setPreferredWidth(46);
-		panelFiles_tableFiles.getColumnModel().getColumn(5).setPreferredWidth(64);
-		panelFiles_tableFiles.getColumnModel().getColumn(6).setPreferredWidth(82);
 		panelFiles_tableFiles.getTableHeader().setFont(UIManager.getFont("Menu.font"));
 		panelFiles_tableFiles.setSurrendersFocusOnKeystroke(true);
 		panelFiles_tableFiles.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -294,7 +337,9 @@ public class MainUI extends JFrame {
 		panelFiles_tableFiles.setFillsViewportHeight(true);
 		panelFiles_tableFiles.setBorder(new EmptyBorder(5, 5, 5, 5));
 		panelFiles_tableFiles.setBackground(Color.WHITE);
+		panelFiles_tableFiles.setAutoCreateRowSorter(true);
 		scrollPane_1.setViewportView(panelFiles_tableFiles);
+		
 		
 		panelBody = new JPanel();
 		panelBody.setBackground(Color.WHITE);
@@ -522,6 +567,11 @@ public class MainUI extends JFrame {
 		
 		allComboBoxLens[0]=panelAperture_comboBoxLens;
 		allComboBoxLens[1]=panelFiles_comboBoxLens;
+		
+		panelFiles_chckbxQuickPreview = new JCheckBox("Quick Preview");
+		panelFiles_chckbxQuickPreview.setBackground(Color.WHITE);
+		panelFiles_chckbxQuickPreview.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+		panelFiles_panel.add(panelFiles_chckbxQuickPreview);
 		allComboBoxLens[2]=panelISO_comboBoxLens;
 		allComboBoxLens[3]=panelShutterSpeed_comboBoxLens;
 		allComboBoxLens[4]=panelFocalLength_comboBoxLens;
